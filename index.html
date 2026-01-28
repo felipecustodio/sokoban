@@ -3,284 +3,663 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sokoban Engine - High-Performance 2D Game Engine</title>
+    <title>Sokoban Engine — Technical Documentation</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tufte-css/1.8.0/tufte.min.css" integrity="sha512-F5lKjC1GKbwLFXdThwMWx8yF8TX/WVrdhWYN9PWb6eb5hIRLmO463nrpqLnEUHxy2EHIzfC4dq/mncHD6ndR+g==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/iconoir-icons/iconoir@main/css/iconoir.css" />
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
+        pre, pre code {
+            font-family: Consolas, 'Liberation Mono', Menlo, Courier, monospace;
+            font-size: 1.2rem;
+            line-height: 1.5;
         }
-
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
-            line-height: 1.6;
-            color: #333;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-        }
-
-        .container {
-            max-width: 900px;
-            margin: 0 auto;
-            padding: 2rem;
-        }
-
-        header {
-            text-align: center;
-            padding: 3rem 0;
-            color: white;
-        }
-
-        h1 {
-            font-size: 3rem;
-            margin-bottom: 0.5rem;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
-        }
-
-        .tagline {
-            font-size: 1.3rem;
-            opacity: 0.9;
-        }
-
-        .card {
-            background: white;
-            border-radius: 12px;
-            padding: 2rem;
-            margin: 1.5rem 0;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
-        }
-
-        h2 {
-            color: #667eea;
-            margin-bottom: 1rem;
-            font-size: 1.5rem;
-        }
-
-        .badge {
-            display: inline-block;
-            background: #667eea;
-            color: white;
-            padding: 0.3rem 0.8rem;
-            border-radius: 20px;
-            font-size: 0.85rem;
-            margin: 0.2rem;
-        }
-
-        .badge-secondary {
-            background: #764ba2;
-        }
-
-        code {
-            background: #f4f4f4;
-            padding: 0.2rem 0.4rem;
-            border-radius: 4px;
-            font-family: 'Consolas', 'Monaco', monospace;
-            font-size: 0.9rem;
-        }
-
         pre {
-            background: #2d3748;
-            color: #e2e8f0;
-            padding: 1.5rem;
-            border-radius: 8px;
+            background: #fffff8;
+            border: 1px solid #ddd;
+            padding: 1.2rem 1.4rem;
             overflow-x: auto;
+            margin: 1.4rem 0;
+        }
+        code {
+            font-family: Consolas, 'Liberation Mono', Menlo, Courier, monospace;
+            font-size: 1.1rem;
+        }
+        p > code, li > code, td > code {
+            background: #f0f0e8;
+            padding: 0.1rem 0.35rem;
+            border-radius: 2px;
+        }
+        .mermaid {
+            margin: 1.4rem 0;
+            text-align: center;
+        }
+        figure.fullwidth .mermaid {
+            max-width: 100%;
+        }
+        .badge-row {
+            margin: 0.6rem 0 1.5rem 0;
+        }
+        .badge-row img {
+            margin-right: 0.3rem;
+            vertical-align: middle;
+        }
+        .perf-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 1.2rem;
             margin: 1rem 0;
         }
-
-        pre code {
-            background: transparent;
-            padding: 0;
-            color: inherit;
+        .perf-table th, .perf-table td {
+            border-bottom: 1px solid #ccc;
+            padding: 0.5rem 0.8rem;
+            text-align: left;
         }
-
-        .feature-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 1rem;
-            margin-top: 1rem;
+        .perf-table th {
+            font-weight: bold;
+            border-bottom: 2px solid #333;
         }
-
-        .feature {
-            background: #f7fafc;
-            padding: 1.5rem;
-            border-radius: 8px;
-            border-left: 4px solid #667eea;
-        }
-
-        .feature h3 {
-            color: #2d3748;
-            margin-bottom: 0.5rem;
-        }
-
-        .links {
-            display: flex;
-            gap: 1rem;
-            flex-wrap: wrap;
-            margin-top: 1rem;
-        }
-
-        .btn {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
-            background: #667eea;
-            color: white;
-            padding: 0.75rem 1.5rem;
-            border-radius: 8px;
-            text-decoration: none;
-            font-weight: 500;
-            transition: transform 0.2s, box-shadow 0.2s;
-        }
-
-        .btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
-        }
-
-        .btn-secondary {
-            background: #764ba2;
-        }
-
-        .btn-secondary:hover {
-            box-shadow: 0 4px 12px rgba(118, 75, 162, 0.4);
-        }
-
-        footer {
+        .perf-table td:nth-child(n+2), .perf-table th:nth-child(n+2) {
             text-align: center;
-            padding: 2rem;
-            color: white;
-            opacity: 0.8;
         }
-
-        .level-preview {
-            font-family: 'Consolas', 'Monaco', monospace;
-            background: #1a202c;
-            color: #48bb78;
-            padding: 1.5rem;
-            border-radius: 8px;
-            text-align: center;
-            line-height: 1.2;
-            margin: 1rem 0;
+        .section-icon {
+            font-size: 1.1rem;
+            margin-right: 0.35rem;
+            vertical-align: baseline;
         }
-
-        .wall { color: #fc8181; }
-        .player { color: #63b3ed; }
-        .box { color: #f6ad55; }
-        .goal { color: #68d391; }
-        .floor { color: #4a5568; }
+        blockquote footer {
+            font-size: 1.1rem;
+        }
     </style>
 </head>
 <body>
-    <div class="container">
-        <header>
-            <h1>📦 Sokoban Engine</h1>
-            <p class="tagline">High-Performance 2D Game Engine for Sokoban Puzzles</p>
-            <div style="margin-top: 1.5rem;">
-                <img src="https://github.com/felipecustodio/sokoban/actions/workflows/ci.yml/badge.svg" alt="CI Status" style="margin: 0.2rem;">
-                <img src="https://img.shields.io/badge/python-3.13+-blue.svg" alt="Python 3.13+" style="margin: 0.2rem;">
-                <img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="MIT License" style="margin: 0.2rem;">
-                <img src="https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ty/main/assets/badge/v0.json" alt="ty" style="margin: 0.2rem;">
-            </div>
-        </header>
+    <article>
+        <h1>Sokoban Engine</h1>
+        <p class="subtitle">A zero-dependency Python engine for Sokoban state representation, move generation, and reachability analysis</p>
 
-        <div class="card">
-            <h2>About</h2>
-            <p>A Python game engine for the classic Sokoban puzzle game. Built with performance in mind using bitboards, efficient state representation, and comprehensive testing.</p>
-            <div style="margin-top: 1rem;">
-                <span class="badge">Python 3.13+</span>
-                <span class="badge badge-secondary">MIT License</span>
-                <span class="badge">Type Hints</span>
-            </div>
+        <div class="badge-row">
+            <img src="https://github.com/felipecustodio/sokoban/actions/workflows/ci.yml/badge.svg" alt="CI Status">
+            <img src="https://img.shields.io/badge/python-3.13+-blue.svg" alt="Python 3.13+">
+            <img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="MIT License">
+            <img src="https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ty/main/assets/badge/v0.json" alt="ty">
         </div>
 
-        <div class="card">
-            <h2>🎮 Level Preview</h2>
-            <div class="level-preview">
-                <span class="wall">####</span><br>
-                <span class="wall">#</span><span class="player">@</span><span class="box">$</span><span class="goal">.</span><span class="wall">#</span><br>
-                <span class="wall">####</span>
-            </div>
-        </div>
+        <!-- ==================== INTRODUCTION ==================== -->
+        <section>
+            <h2><i class="iconoir-cpu section-icon"></i>Introduction</h2>
 
-        <div class="card">
-            <h2>✨ Features</h2>
-            <div class="feature-grid">
-                <div class="feature">
-                    <h3>⚡ High Performance</h3>
-                    <p>Bitboard-based state representation for O(1) collision detection</p>
+            <p><span class="newthought">This engine</span> provides the representational
+            substrate upon which Sokoban solvers and renderers can operate.
+            <label for="sn-design" class="margin-toggle sidenote-number"></label>
+            <input type="checkbox" id="sn-design" class="margin-toggle"/>
+            <span class="sidenote">The architecture separates immutable static data (the map), mutable dynamic state (player and box positions), and pure-function logic (move validation, reachability). Some cross-layer imports exist for practical reasons&mdash;for instance, <code>GameState</code> imports from the <code>board</code> package to construct itself from a parsed level.</span>
+            It exposes a board model, a move-application pipeline, and a bitwise reachability
+            oracle&mdash;everything a solver needs to enumerate the state space.</p>
+
+            <p>The entire implementation carries zero runtime dependencies beyond Python&rsquo;s standard library.
+            <label for="sn-zero-dep" class="margin-toggle sidenote-number"></label>
+            <input type="checkbox" id="sn-zero-dep" class="margin-toggle"/>
+            <span class="sidenote">The engine relies only on Python built-ins and the standard library. All data structures are implemented from scratch using Python integers as bitboards, tuples, and dataclasses.</span>
+            The design favours <em>bit-level</em> representations&mdash;a single Python <code>int</code>
+            encodes the full set of box positions, enabling O(1) collision checks through bitwise AND.</p>
+        </section>
+
+        <!-- ==================== STATE REPRESENTATION ==================== -->
+        <section>
+            <h2><i class="iconoir-grid-plus section-icon"></i>State Representation</h2>
+
+            <p><span class="newthought">The game state</span> is a mutable <code>@dataclass(slots=True)</code>
+            comprising three fields: a player tile index (a small integer), a canonical tuple of box
+            tile indices (sorted for consistent hashing), and a box bitboard (a single Python
+            <code>int</code> where bit <em>k</em> is set iff a box occupies tile <em>k</em>).
+            <label for="sn-bitboard-mem" class="margin-toggle sidenote-number"></label>
+            <input type="checkbox" id="sn-bitboard-mem" class="margin-toggle"/>
+            <span class="sidenote">The bitboard integer itself is compact: for a board with 200 passable tiles, it needs only 200 bits (~25 bytes) plus Python <code>int</code> object overhead. However, the full <code>GameState</code> also includes Python object references for the player index and box tuple, so total memory is larger than the raw bitboard.</span>
+            The dual representation&mdash;sorted tuple <em>and</em> bitboard&mdash;serves complementary roles:
+            the tuple provides equality and hashing for transposition tables; the bitboard provides
+            O(1) membership testing for collision detection.</p>
+
+            <p>Hashing is implemented via <code>hash((self.player_index, self.box_indices))</code>,
+            which is O(<em>b</em>) where <em>b</em> is the number of boxes, since Python must hash
+            each element in the inner tuple.
+            <label for="sn-tile-idx" class="margin-toggle sidenote-number"></label>
+            <input type="checkbox" id="sn-tile-idx" class="margin-toggle"/>
+            <span class="sidenote">Wall cells receive the sentinel index <code>-1</code> and are excluded from the index space entirely. The bitboard width equals only the number of passable tiles, not the total grid area.</span>
+            Tile indexing compresses the board: only passable (floor and goal) cells receive sequential
+            integer indices, so the bitboard is maximally compact.</p>
+
+            <p>Core bitboard operations are implemented as static methods on <code>BitboardOps</code>:</p>
+
+            <pre><code>class BitboardOps:
+    @staticmethod
+    def has_box(bitboard, tile_index):
+        return bool(bitboard & (1 << tile_index))
+
+    @staticmethod
+    def set_box(bitboard, tile_index):
+        return bitboard | (1 << tile_index)
+
+    @staticmethod
+    def clear_box(bitboard, tile_index):
+        return bitboard & ~(1 << tile_index)
+
+    @staticmethod
+    def move_box(bitboard, from_index, to_index):
+        return (bitboard & ~(1 << from_index)) | (1 << to_index)</code></pre>
+
+            <p>The win condition reduces to a single bitwise comparison: all box bits must lie within the
+            goal mask.</p>
+
+            <pre><code>@staticmethod
+def all_boxes_on_goals(box_bitboard, goal_mask):
+    return (box_bitboard & goal_mask) == box_bitboard</code></pre>
+
+            <figure class="fullwidth">
+                <div class="mermaid">
+                block-beta
+                    columns 8
+                    space:8
+                    b7["bit 7"]:1 b6["bit 6"]:1 b5["bit 5"]:1 b4["bit 4"]:1 b3["bit 3"]:1 b2["bit 2"]:1 b1["bit 1"]:1 b0["bit 0"]:1
+                    v7["0"]:1 v6["1"]:1 v5["0"]:1 v4["0"]:1 v3["1"]:1 v2["0"]:1 v1["1"]:1 v0["0"]:1
+                    space:8
+                    g7["0"]:1 g6["1"]:1 g5["0"]:1 g4["1"]:1 g3["0"]:1 g2["0"]:1 g1["1"]:1 g0["0"]:1
+
+                    style v6 fill:#e8d44d,stroke:#333
+                    style v3 fill:#e8d44d,stroke:#333
+                    style v1 fill:#e8d44d,stroke:#333
+                    style g6 fill:#68d391,stroke:#333
+                    style g4 fill:#68d391,stroke:#333
+                    style g1 fill:#68d391,stroke:#333
                 </div>
-                <div class="feature">
-                    <h3>🧩 Level Parsing</h3>
-                    <p>Support for XSB format and run-length encoding (RLE)</p>
+                <p>Bitboard layout for an 8-tile board. Top row: box bitboard (yellow = box present at tiles 1, 3, 6).
+                Bottom row: goal mask (green = goal at tiles 1, 4, 6). The AND of these two yields
+                <code>0b01000010</code>&mdash;two of three boxes are on goals.</p>
+            </figure>
+        </section>
+
+        <!-- ==================== MOVE GENERATION ==================== -->
+        <section>
+            <h2><i class="iconoir-arrow-right section-icon"></i>Move Generation</h2>
+
+            <p><span class="newthought">Every player action</span> is classified as either a <em>walk</em>
+            (the player steps onto an empty floor tile) or a <em>push</em> (the player displaces a box
+            into the tile beyond it).
+            <label for="sn-move-cost" class="margin-toggle sidenote-number"></label>
+            <input type="checkbox" id="sn-move-cost" class="margin-toggle"/>
+            <span class="sidenote">Walk vs. push distinction matters for solver metrics: the standard Sokoban scoring convention counts pushes separately from total moves. The engine tracks both via <code>move_count</code> and <code>push_count</code> on the <code>Game</code> facade.</span>
+            The <code>apply_move</code> function resolves each action by consulting the
+            precomputed neighbor table and the box bitboard.</p>
+
+            <p>The validation pipeline is concise:</p>
+
+            <pre><code>def apply_move(static_map, state, direction):
+    player_idx = state.player_index
+    adjacent_idx = static_map.get_neighbor(player_idx, direction)
+
+    if adjacent_idx == -1:                              # wall
+        return None, MoveResult.BLOCKED_WALL
+
+    if BitboardOps.has_box(state.box_bitboard, adjacent_idx):
+        return _apply_push(static_map, state, direction, adjacent_idx)
+
+    new_state = state.with_move(adjacent_idx)           # walk
+    return new_state, MoveResult.SUCCESS_WALK</code></pre>
+
+            <p>Push validation extends the check one tile further:
+            <label for="sn-push-chain" class="margin-toggle sidenote-number"></label>
+            <input type="checkbox" id="sn-push-chain" class="margin-toggle"/>
+            <span class="sidenote">Standard Sokoban rules allow pushing only one box at a time. This simplifies validation to two neighbor lookups and two bitboard membership tests (one to detect the box, one to check the tile beyond).</span>
+            if the tile beyond the box is a wall or contains another box, the push is blocked.
+            Otherwise the player occupies the box&rsquo;s former position and the box advances one cell.</p>
+
+            <pre><code>def _apply_push(static_map, state, direction, box_idx):
+    beyond_idx = static_map.get_neighbor(box_idx, direction)
+
+    if beyond_idx == -1:                                 # wall beyond
+        return None, MoveResult.BLOCKED_BOX
+    if BitboardOps.has_box(state.box_bitboard, beyond_idx):  # box beyond
+        return None, MoveResult.BLOCKED_BOX
+
+    new_state = state.with_move(
+        new_player_index=box_idx,
+        pushed_box_from=box_idx,
+        pushed_box_to=beyond_idx,
+    )
+
+    if new_state.is_solved(static_map.goal_mask):
+        return new_state, MoveResult.WIN
+    return new_state, MoveResult.SUCCESS_PUSH</code></pre>
+
+            <figure class="fullwidth">
+                <div class="mermaid">
+                flowchart LR
+                    A["Player<br>moves in<br>direction D"] --> B{"Adjacent<br>tile?"}
+                    B -->|"Wall (−1)"| C["BLOCKED_WALL"]
+                    B -->|"Empty"| D["SUCCESS_WALK<br>player → adjacent"]
+                    B -->|"Box"| E{"Tile beyond<br>box?"}
+                    E -->|"Wall (−1)"| F["BLOCKED_BOX"]
+                    E -->|"Another box"| F
+                    E -->|"Empty"| G{"All boxes<br>on goals?"}
+                    G -->|"Yes"| H["WIN"]
+                    G -->|"No"| I["SUCCESS_PUSH<br>player → box pos<br>box → beyond"]
+
+                    style C fill:#fc8181,stroke:#333
+                    style F fill:#fc8181,stroke:#333
+                    style D fill:#c6f6d5,stroke:#333
+                    style I fill:#c6f6d5,stroke:#333
+                    style H fill:#68d391,stroke:#333
                 </div>
-                <div class="feature">
-                    <h3>↩️ Undo/Redo</h3>
-                    <p>Full history management with efficient move tracking</p>
+                <p>Move validation flowchart. A walk requires one neighbor lookup and one bitboard test. A push requires two of each.</p>
+            </figure>
+        </section>
+
+        <!-- ==================== REACHABILITY ANALYSIS ==================== -->
+        <section>
+            <h2><i class="iconoir-search section-icon"></i>Reachability Analysis</h2>
+
+            <p><span class="newthought">A solver needs to know</span> not just which directions the player can
+            step, but which <em>push positions</em> the player can reach. The engine provides a bitwise
+            flood-fill that computes the full reachable set.
+            <label for="sn-reachability-cost" class="margin-toggle sidenote-number"></label>
+            <input type="checkbox" id="sn-reachability-cost" class="margin-toggle"/>
+            <span class="sidenote">Each iteration scans all currently reachable tiles and checks 4 neighbors each. The loop runs at most O(diameter) times before converging. All state is held in integer bitboards&mdash;no queues or sets are allocated during expansion.</span>
+            The algorithm initialises a <code>reachable</code> bitboard with only the player&rsquo;s
+            bit set, then iteratively expands by ORing in passable neighbors until a fixed point is
+            reached.</p>
+
+            <pre><code>def compute_reachability(static_map, player_index, box_bitboard):
+    reachable = 1 << player_index
+    passable_mask = static_map.floor_mask & ~box_bitboard
+
+    while True:
+        expanded = _expand_reachable(reachable, static_map, passable_mask)
+        if expanded == reachable:      # fixed point
+            break
+        reachable = expanded
+
+    return reachable</code></pre>
+
+            <p>The expansion step iterates through set bits using the classic
+            <code>x &amp; -x</code> / <code>x &amp;= x - 1</code> idiom:
+            <label for="sn-bit-trick" class="margin-toggle sidenote-number"></label>
+            <input type="checkbox" id="sn-bit-trick" class="margin-toggle"/>
+            <span class="sidenote">The expression <code>x &amp; -x</code> isolates the lowest set bit via two&rsquo;s complement arithmetic. <code>x &amp;= x - 1</code> clears it. Together they enumerate all set bits without needing an index variable or array.</span></p>
+
+            <pre><code>def _expand_reachable(reachable, static_map, passable_mask):
+    expanded = reachable
+    remaining = reachable
+    while remaining:
+        tile_idx = (remaining & -remaining).bit_length() - 1
+        remaining &= remaining - 1
+
+        for direction in Direction:
+            neighbor_idx = static_map.neighbors[tile_idx][direction]
+            if neighbor_idx != -1 and (passable_mask & (1 << neighbor_idx)):
+                expanded |= 1 << neighbor_idx
+    return expanded</code></pre>
+
+            <p>An alternative BFS-style variant (<code>compute_reachability_fast</code>) maintains a separate
+            frontier bitboard, processing only newly discovered tiles each iteration.
+            <label for="sn-bfs" class="margin-toggle sidenote-number"></label>
+            <input type="checkbox" id="sn-bfs" class="margin-toggle"/>
+            <span class="sidenote">The source docstring describes this variant as potentially faster &ldquo;for sparse boards where most tiles have few reachable neighbors.&rdquo; Because each tile is expanded exactly once (only when it enters the frontier), it avoids the re-scanning overhead of the iterative version.</span>
+            Because each tile enters the frontier exactly once, this variant avoids re-scanning
+            already-reachable tiles.</p>
+
+            <p>The reachability oracle feeds directly into <code>get_legal_pushes()</code>, which enumerates
+            all valid <code>(box_index, direction)</code> pairs by checking whether the player can reach
+            the tile opposite each box relative to the push direction.</p>
+
+            <figure class="fullwidth">
+                <div class="mermaid">
+                flowchart LR
+                    subgraph "Iteration 0"
+                        I0["reachable = {P}"]
+                    end
+                    subgraph "Iteration 1"
+                        I1["reachable ∪= neighbors(P)<br>∩ passable_mask"]
+                    end
+                    subgraph "Iteration 2"
+                        I2["reachable ∪= neighbors(new)<br>∩ passable_mask"]
+                    end
+                    subgraph "Fixed Point"
+                        I3["expanded == reachable<br>→ return"]
+                    end
+                    I0 --> I1 --> I2 -->|"..."| I3
                 </div>
-                <div class="feature">
-                    <h3>🔍 Solver API</h3>
-                    <p>Push-centric API with reachability analysis for AI solvers</p>
+                <p>Flood-fill expansion sequence. Each iteration ORs in passable neighbors of all currently reachable tiles. The process halts when no new tiles are discovered (fixed-point convergence).</p>
+            </figure>
+        </section>
+
+        <!-- ==================== STATIC MAP ==================== -->
+        <section>
+            <h2><i class="iconoir-map section-icon"></i>Static Map</h2>
+
+            <p><span class="newthought">Level geometry is immutable.</span> The <code>StaticMap</code> is a
+            frozen dataclass (<code>@dataclass(frozen=True, slots=True)</code>) encoding all
+            information that never changes during gameplay: wall positions, goal positions,
+            tile index mappings, and a precomputed neighbor table.
+            <label for="sn-static-cost" class="margin-toggle sidenote-number"></label>
+            <input type="checkbox" id="sn-static-cost" class="margin-toggle"/>
+            <span class="sidenote">The neighbor table stores a 4-tuple of integers per passable tile (one per direction: up, down, left, right). It is built once during level loading by <code>StaticMap.from_parsed_level()</code> and shared across all game states.</span>
+            It is created once per level and shared across all game states.</p>
+
+            <p>The neighbor table <code>neighbors[tile_idx][direction]</code> maps each passable tile and
+            direction to the adjacent tile index (or <code>-1</code> for walls). This eliminates
+            coordinate arithmetic and bounds-checking from the move pipeline: each lookup is a direct
+            tuple index.
+            <label for="sn-neighbor-build" class="margin-toggle sidenote-number"></label>
+            <input type="checkbox" id="sn-neighbor-build" class="margin-toggle"/>
+            <span class="sidenote">The caller must still branch on the <code>-1</code> sentinel to detect walls. The benefit is that the <em>computation</em> of which tile is adjacent (coordinate offsets, bounds checks, wall lookups) is done once at build time, not on every move.</span></p>
+
+            <p>Two bitboard masks complete the static data:</p>
+            <ul>
+                <li><code>floor_mask</code>: all passable tile bits set, computed as <code>(1 &lt;&lt; num_floor_tiles) - 1</code></li>
+                <li><code>goal_mask</code>: only goal tile bits set, used for the win condition check</li>
+            </ul>
+
+            <figure class="fullwidth">
+                <div class="mermaid">
+                flowchart TB
+                    subgraph "Tile Index Grid"
+                        G["Grid (row, col)"]
+                    end
+                    subgraph "Index Mappings"
+                        P2I["position_to_index[row][col] → TileIndex"]
+                        I2P["index_to_position[TileIndex] → (row, col)"]
+                    end
+                    subgraph "Neighbor Table"
+                        NT["neighbors[TileIndex][Direction] → TileIndex | −1"]
+                    end
+                    subgraph "Bitboard Masks"
+                        FM["floor_mask: all passable bits set"]
+                        GM["goal_mask: goal bits set"]
+                    end
+                    G --> P2I
+                    G --> I2P
+                    P2I --> NT
+                    NT -->|"Used by"| MV["move.apply_move()"]
+                    NT -->|"Used by"| RE["reachability.compute_reachability()"]
+                    FM --> RE
+                    GM -->|"Win check"| MV
                 </div>
-                <div class="feature">
-                    <h3>✅ Type Safe</h3>
-                    <p>Fully typed with Python 3.13+ using Self types</p>
+                <p>Static map data flow. Tile index mappings are built from the parsed grid; the neighbor table and bitboard masks are derived from these mappings. Move validation and reachability analysis both consume the neighbor table at runtime.</p>
+            </figure>
+        </section>
+
+        <!-- ==================== HISTORY & UNDO ==================== -->
+        <section>
+            <h2><i class="iconoir-undo section-icon"></i>History &amp; Undo</h2>
+
+            <p><span class="newthought">Instead of snapshotting</span> the entire game state on each move,
+            the engine stores a <code>MoveRecord</code> object per move&mdash;a frozen dataclass holding
+            only the direction and a push flag.
+            <label for="sn-undo-mem" class="margin-toggle sidenote-number"></label>
+            <input type="checkbox" id="sn-undo-mem" class="margin-toggle"/>
+            <span class="sidenote"><code>MoveRecord</code> also provides an <code>encode()</code> method that packs to 3 bits (2 for direction, 1 for push flag), but the <code>UndoStack</code> stores the full Python objects in a <code>list[MoveRecord]</code>, not the encoded integers. The memory savings come from not storing full state snapshots (player + all box positions + bitboard) per move.</span>
+            The previous state is reconstructed by <em>inverting</em> the move rather than restoring
+            from a snapshot.</p>
+
+            <pre><code>@dataclass(frozen=True, slots=True)
+class MoveRecord:
+    direction: Direction
+    was_push: bool
+
+    def encode(self) -> int:
+        """Bit layout: [direction (2 bits)][was_push (1 bit)]"""
+        return (self.direction.value << 1) | int(self.was_push)
+
+    @classmethod
+    def decode(cls, value: int) -> "MoveRecord":
+        return cls(
+            direction=Direction(value >> 1),
+            was_push=bool(value & 1),
+        )</code></pre>
+
+            <p>The <code>UndoStack</code> manages two lists: a history stack and a redo stack.
+            <label for="sn-redo" class="margin-toggle sidenote-number"></label>
+            <input type="checkbox" id="sn-redo" class="margin-toggle"/>
+            <span class="sidenote">The redo stack is cleared whenever a new move is pushed. This matches the standard editor undo/redo contract: new actions after an undo invalidate the redo history.</span>
+            Pushing a new move clears the redo stack. Undoing pops from history and pushes onto
+            redo. Redoing pops from redo and pushes onto history.</p>
+
+            <p>State inversion is deterministic: for a walk, the player simply moves in the opposite
+            direction (O(1)). For a push, both the player and the displaced box retreat one cell;
+            this calls <code>with_move()</code>, which rebuilds the sorted box tuple via
+            <code>_update_box_indices</code>&mdash;a filter, append, and sort costing O(<em>b</em> log <em>b</em>)
+            where <em>b</em> is the number of boxes.
+            <label for="sn-undo-cost" class="margin-toggle sidenote-number"></label>
+            <input type="checkbox" id="sn-undo-cost" class="margin-toggle"/>
+            <span class="sidenote">The <code>_update_box_indices</code> helper: <code>new_list = [idx for idx in box_indices if idx != from_idx]</code>, <code>new_list.append(to_idx)</code>, <code>return tuple(sorted(new_list))</code>. The sort maintains the canonical ordering needed for consistent hashing.</span></p>
+        </section>
+
+        <!-- ==================== PARSER ARCHITECTURE ==================== -->
+        <section>
+            <h2><i class="iconoir-page section-icon"></i>Parser Architecture</h2>
+
+            <p><span class="newthought">The parser accepts</span> two input formats: raw XSB strings and
+            run-length encoded (RLE) notation.
+            <label for="sn-xsb" class="margin-toggle sidenote-number"></label>
+            <input type="checkbox" id="sn-xsb" class="margin-toggle"/>
+            <span class="sidenote">XSB character set: <code>#</code>&nbsp;wall, <code>&nbsp;</code>&nbsp;or&nbsp;<code>-</code>&nbsp;or&nbsp;<code>_</code>&nbsp;floor, <code>.</code>&nbsp;goal, <code>@</code>&nbsp;player, <code>+</code>&nbsp;player-on-goal, <code>$</code>&nbsp;box, <code>*</code>&nbsp;box-on-goal.</span>
+            XSB is the <em>de facto</em> standard for Sokoban level interchange: each character maps
+            to a cell type, with compound characters (<code>+</code>, <code>*</code>) representing
+            overlapping entities (player or box on a goal).</p>
+
+            <p>RLE compresses consecutive identical characters with a count prefix:
+            <code>5#</code> expands to <code>#####</code>. Rows are separated by <code>|</code>.
+            The <code>is_rle_format()</code> function auto-detects the format: if the string contains
+            a <code>|</code> character, it is treated as RLE. Absent <code>|</code>, the function
+            falls back to checking for digit-character pairs like <code>\d+[#@$.*+ _-]</code>.
+            <label for="sn-rle-detect" class="margin-toggle sidenote-number"></label>
+            <input type="checkbox" id="sn-rle-detect" class="margin-toggle"/>
+            <span class="sidenote">The <code>|</code> check alone is sufficient to trigger RLE decoding. The regex fallback handles the rarer case of single-line RLE without pipe separators.</span></p>
+
+            <p>After decoding, the parser validates structural invariants:</p>
+            <ul>
+                <li>Exactly one player</li>
+                <li>Box count equals goal count</li>
+                <li>At least one box</li>
+            </ul>
+
+            <p>The result is a frozen <code>ParsedLevel</code> dataclass containing the cell grid,
+            player position, and box and goal position tuples (in row-major parse order, not explicitly
+            sorted&mdash;canonical sorting happens later in <code>GameState.from_positions()</code>).
+            From this, the engine builds the tile index mappings and static map.</p>
+        </section>
+
+        <!-- ==================== PERFORMANCE ANALYSIS ==================== -->
+        <section>
+            <h2><i class="iconoir-stats-up-square section-icon"></i>Performance Characteristics</h2>
+
+            <p><span class="newthought">The engine&rsquo;s design</span> prioritises cheap state transitions,
+            since a solver will execute millions of them.
+            <label for="sn-perf-why" class="margin-toggle sidenote-number"></label>
+            <input type="checkbox" id="sn-perf-why" class="margin-toggle"/>
+            <span class="sidenote">The bitboard representation was chosen specifically to make collision detection, win checking, and reachability computation operate on native integer arithmetic rather than collection traversals.</span>
+            The following table summarises the key operations and how the bitboard approach compares
+            to a na&iuml;ve grid-based representation.</p>
+
+            <figure class="fullwidth">
+                <table class="perf-table">
+                    <thead>
+                        <tr>
+                            <th>Operation</th>
+                            <th>This Engine</th>
+                            <th>Na&iuml;ve Grid</th>
+                            <th>Notes</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Box collision check</td>
+                            <td>O(1) bitwise AND</td>
+                            <td>O(<em>b</em>) linear scan</td>
+                            <td><em>b</em> = box count</td>
+                        </tr>
+                        <tr>
+                            <td>Neighbor lookup</td>
+                            <td>O(1) table index</td>
+                            <td>O(1) arithmetic + bounds check</td>
+                            <td>Precomputed; still branches on <code>-1</code></td>
+                        </tr>
+                        <tr>
+                            <td>Win condition</td>
+                            <td>O(1) bitboard comparison</td>
+                            <td>O(<em>b</em>) position check</td>
+                            <td><code>(boxes &amp; goals) == boxes</code></td>
+                        </tr>
+                        <tr>
+                            <td>State hashing</td>
+                            <td>O(<em>b</em>) tuple hash</td>
+                            <td>O(<em>b</em>) set hash</td>
+                            <td>Canonical sorted tuple enables consistent hashing</td>
+                        </tr>
+                        <tr>
+                            <td>State equality</td>
+                            <td>O(<em>b</em>) tuple compare</td>
+                            <td>O(<em>b</em>) set compare</td>
+                            <td>Sorted order allows early exit</td>
+                        </tr>
+                        <tr>
+                            <td>Move undo (walk)</td>
+                            <td>O(1) inverse</td>
+                            <td>O(<em>n</em>) state restore</td>
+                            <td>Move player in opposite direction</td>
+                        </tr>
+                        <tr>
+                            <td>Move undo (push)</td>
+                            <td>O(<em>b</em> log <em>b</em>) re-sort</td>
+                            <td>O(<em>n</em>) state restore</td>
+                            <td>Box tuple re-sorted to maintain canonical order</td>
+                        </tr>
+                        <tr>
+                            <td>Reachability</td>
+                            <td>O(<em>n</em> &middot; diam) flood-fill</td>
+                            <td>O(<em>n</em>) BFS with queue</td>
+                            <td>No allocation per step; all state in integers</td>
+                        </tr>
+                        <tr>
+                            <td>Move record storage</td>
+                            <td>One <code>MoveRecord</code> object per move</td>
+                            <td>Full state snapshot</td>
+                            <td>Stores direction + push flag, not full state</td>
+                        </tr>
+                    </tbody>
+                </table>
+                <p>Complexity comparison between the bitboard engine and a na&iuml;ve grid-based implementation.
+                <em>b</em> = number of boxes, <em>n</em> = number of passable tiles, diam = board diameter.</p>
+            </figure>
+        </section>
+
+        <!-- ==================== ENGINE ARCHITECTURE ==================== -->
+        <section>
+            <h2><i class="iconoir-box-3d-center section-icon"></i>Engine Architecture</h2>
+
+            <p><span class="newthought">The codebase</span> consists of 15 source files across 7
+            sub-packages, totalling ~1,980 lines of Python.
+            <label for="sn-modules" class="margin-toggle sidenote-number"></label>
+            <input type="checkbox" id="sn-modules" class="margin-toggle"/>
+            <span class="sidenote">The <code>Game</code> class in <code>engine/game.py</code> (252 lines) is the public facade; all other modules are internal. The <code>types</code> and <code>direction</code> modules from <code>core</code> are imported by nearly every other module and are omitted from the diagram arrows for clarity.</span>
+            The <code>core</code> layer defines types and direction utilities.
+            The <code>board</code> layer handles parsing and static map construction.
+            The <code>state</code> layer manages bitboards and game state.
+            The <code>logic</code> layer implements move application and reachability.
+            The <code>history</code> layer provides undo/redo.
+            The <code>io</code> layer handles file I/O, RLE encoding, and solution string parsing.
+            The <code>engine</code> layer ties everything together behind the <code>Game</code> facade.</p>
+
+            <figure class="fullwidth">
+                <div class="mermaid">
+                graph TB
+                    subgraph "core"
+                        types["types.py<br><em>TileIndex, Bitboard,<br>CellType, MoveResult</em>"]
+                        direction_mod["direction.py<br><em>Direction enum,<br>opposite_direction()</em>"]
+                    end
+
+                    subgraph "board"
+                        parser["parser.py<br><em>parse_level(),<br>ParsedLevel</em>"]
+                        tile_index["tile_index.py<br><em>build_tile_index(),<br>position ↔ index</em>"]
+                        static_map["static_map.py<br><em>StaticMap: neighbors,<br>floor_mask, goal_mask</em>"]
+                    end
+
+                    subgraph "io"
+                        rle["rle.py<br><em>encode/decode RLE</em>"]
+                        level_file["level_file.py<br><em>file I/O, format detect</em>"]
+                        solution["solution.py<br><em>LURD string parsing</em>"]
+                    end
+
+                    subgraph "state"
+                        bitboard["bitboard.py<br><em>BitboardOps: set, clear,<br>has_box, move_box</em>"]
+                        game_state["game_state.py<br><em>GameState: player_index,<br>box_indices, box_bitboard</em>"]
+                    end
+
+                    subgraph "logic"
+                        move["move.py<br><em>apply_move(),<br>can_move()</em>"]
+                        reachability["reachability.py<br><em>flood-fill,<br>get_legal_pushes()</em>"]
+                    end
+
+                    subgraph "history"
+                        move_record["move_record.py<br><em>3-bit MoveRecord</em>"]
+                        undo_stack["undo_stack.py<br><em>UndoStack,<br>invert_move()</em>"]
+                    end
+
+                    subgraph "engine"
+                        game["game.py<br><em>Game: public API facade</em>"]
+                    end
+
+                    parser --> static_map
+                    tile_index --> static_map
+                    parser --> game_state
+                    static_map --> game_state
+                    bitboard --> game_state
+                    static_map --> move
+                    bitboard --> move
+                    game_state --> move
+                    static_map --> reachability
+                    move_record --> undo_stack
+                    static_map --> undo_stack
+                    game_state --> undo_stack
+                    move_record --> solution
+                    rle --> level_file
+                    game --> level_file
+
+                    parser --> game
+                    static_map --> game
+                    move_record --> game
+                    undo_stack --> game
+                    move --> game
+                    reachability --> game
+                    game_state --> game
+
+                    style game fill:#e8d44d,stroke:#333,color:#333
+                    style types fill:#e2e8f0,stroke:#333,color:#333
+                    style direction_mod fill:#e2e8f0,stroke:#333,color:#333
                 </div>
-                <div class="feature">
-                    <h3>🧪 Well Tested</h3>
-                    <p>Comprehensive test suite with 100+ tests</p>
-                </div>
-            </div>
-        </div>
+                <p>Module dependency graph. Arrows point from dependency to dependent (<code>A → B</code> means B imports A).
+                Yellow: public API (<code>Game</code>). Grey: foundational types (imported broadly, arrows omitted for clarity).
+                Note that <code>level_file</code> imports <code>Game</code>, not the other way around. The graph is acyclic.</p>
+            </figure>
+        </section>
 
-        <div class="card">
-            <h2>🚀 Quick Start</h2>
-            <pre><code># Install with uv
-uv pip install sokoban-engine
+        <section>
+            <p style="margin-top: 2rem;">
+                <a href="https://github.com/felipecustodio/sokoban">View on GitHub</a> &middot;
+                Created by Felipe Cust&oacute;dio &middot; MIT License
+            </p>
+        </section>
+    </article>
 
-# Or clone and install
-git clone https://github.com/felipecustodio/sokoban.git
-cd sokoban
-uv sync</code></pre>
-        </div>
-
-        <div class="card">
-            <h2>💻 Usage Example</h2>
-            <pre><code>from sokoban_engine import Game
-from sokoban_engine.core.direction import Direction
-
-# Load a level
-level = '''
-#####
-#@$.#
-#####
-'''
-
-game = Game(level)
-
-# Make moves
-result = game.move(Direction.RIGHT)
-print(f"Move result: {result}")  # SUCCESS_PUSH or WIN
-
-# Check state
-print(f"Solved: {game.is_solved}")
-print(f"Pushes: {game.push_count}")</code></pre>
-        </div>
-
-        <div class="card">
-            <h2>📚 Documentation</h2>
-            <div class="links">
-                <a href="https://github.com/felipecustodio/sokoban" class="btn">
-                    <span>📁</span> View on GitHub
-                </a>
-                <a href="https://github.com/felipecustodio/sokoban/actions" class="btn btn-secondary">
-                    <span>🔧</span> CI Status
-                </a>
-            </div>
-        </div>
-
-        <footer>
-            <p>Created by Felipe Custódio • Built with Python & uv</p>
-        </footer>
-    </div>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+    <script>
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'neutral',
+            fontFamily: 'et-book, Palatino, "Palatino Linotype", "Palatino LT STD", "Book Antiqua", Georgia, serif',
+            flowchart: {
+                useMaxWidth: true,
+                htmlLabels: true,
+                curve: 'basis'
+            }
+        });
+    </script>
 </body>
 </html>

@@ -1,6 +1,5 @@
 """Tests for the main Game class."""
 
-
 from sokoban_engine import Direction, MoveResult
 
 

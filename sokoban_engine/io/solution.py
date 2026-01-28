@@ -83,7 +83,10 @@ def solution_to_string(
         Solution string.
 
     Example:
-        >>> records = [MoveRecord(Direction.DOWN, True), MoveRecord(Direction.RIGHT, False)]
+        >>> records = [
+        ...     MoveRecord(Direction.DOWN, True),
+        ...     MoveRecord(Direction.RIGHT, False),
+        ... ]
         >>> solution_to_string(records)
         'Dr'
     """

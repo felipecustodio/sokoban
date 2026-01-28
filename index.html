@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sokoban Engine - High-Performance 2D Game Engine</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        header {
+            text-align: center;
+            padding: 3rem 0;
+            color: white;
+        }
+
+        h1 {
+            font-size: 3rem;
+            margin-bottom: 0.5rem;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .tagline {
+            font-size: 1.3rem;
+            opacity: 0.9;
+        }
+
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 2rem;
+            margin: 1.5rem 0;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+        }
+
+        h2 {
+            color: #667eea;
+            margin-bottom: 1rem;
+            font-size: 1.5rem;
+        }
+
+        .badge {
+            display: inline-block;
+            background: #667eea;
+            color: white;
+            padding: 0.3rem 0.8rem;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            margin: 0.2rem;
+        }
+
+        .badge-secondary {
+            background: #764ba2;
+        }
+
+        code {
+            background: #f4f4f4;
+            padding: 0.2rem 0.4rem;
+            border-radius: 4px;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 0.9rem;
+        }
+
+        pre {
+            background: #2d3748;
+            color: #e2e8f0;
+            padding: 1.5rem;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin: 1rem 0;
+        }
+
+        pre code {
+            background: transparent;
+            padding: 0;
+            color: inherit;
+        }
+
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .feature {
+            background: #f7fafc;
+            padding: 1.5rem;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+
+        .feature h3 {
+            color: #2d3748;
+            margin-bottom: 0.5rem;
+        }
+
+        .links {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+            margin-top: 1rem;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: #667eea;
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 500;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: #764ba2;
+        }
+
+        .btn-secondary:hover {
+            box-shadow: 0 4px 12px rgba(118, 75, 162, 0.4);
+        }
+
+        footer {
+            text-align: center;
+            padding: 2rem;
+            color: white;
+            opacity: 0.8;
+        }
+
+        .level-preview {
+            font-family: 'Consolas', 'Monaco', monospace;
+            background: #1a202c;
+            color: #48bb78;
+            padding: 1.5rem;
+            border-radius: 8px;
+            text-align: center;
+            line-height: 1.2;
+            margin: 1rem 0;
+        }
+
+        .wall { color: #fc8181; }
+        .player { color: #63b3ed; }
+        .box { color: #f6ad55; }
+        .goal { color: #68d391; }
+        .floor { color: #4a5568; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>📦 Sokoban Engine</h1>
+            <p class="tagline">High-Performance 2D Game Engine for Sokoban Puzzles</p>
+        </header>
+
+        <div class="card">
+            <h2>About</h2>
+            <p>A Python game engine for the classic Sokoban puzzle game. Built with performance in mind using bitboards, efficient state representation, and comprehensive testing.</p>
+            <div style="margin-top: 1rem;">
+                <span class="badge">Python 3.13+</span>
+                <span class="badge badge-secondary">MIT License</span>
+                <span class="badge">Type Hints</span>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>🎮 Level Preview</h2>
+            <div class="level-preview">
+                <span class="wall">####</span><br>
+                <span class="wall">#</span><span class="player">@</span><span class="box">$</span><span class="goal">.</span><span class="wall">#</span><br>
+                <span class="wall">####</span>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>✨ Features</h2>
+            <div class="feature-grid">
+                <div class="feature">
+                    <h3>⚡ High Performance</h3>
+                    <p>Bitboard-based state representation for O(1) collision detection</p>
+                </div>
+                <div class="feature">
+                    <h3>🧩 Level Parsing</h3>
+                    <p>Support for XSB format and run-length encoding (RLE)</p>
+                </div>
+                <div class="feature">
+                    <h3>↩️ Undo/Redo</h3>
+                    <p>Full history management with efficient move tracking</p>
+                </div>
+                <div class="feature">
+                    <h3>🔍 Solver API</h3>
+                    <p>Push-centric API with reachability analysis for AI solvers</p>
+                </div>
+                <div class="feature">
+                    <h3>✅ Type Safe</h3>
+                    <p>Fully typed with Python 3.13+ using Self types</p>
+                </div>
+                <div class="feature">
+                    <h3>🧪 Well Tested</h3>
+                    <p>Comprehensive test suite with 100+ tests</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>🚀 Quick Start</h2>
+            <pre><code># Install with uv
+uv pip install sokoban-engine
+
+# Or clone and install
+git clone https://github.com/felipecustodio/sokoban.git
+cd sokoban
+uv sync</code></pre>
+        </div>
+
+        <div class="card">
+            <h2>💻 Usage Example</h2>
+            <pre><code>from sokoban_engine import Game
+from sokoban_engine.core.direction import Direction
+
+# Load a level
+level = '''
+#####
+#@$.#
+#####
+'''
+
+game = Game(level)
+
+# Make moves
+result = game.move(Direction.RIGHT)
+print(f"Move result: {result}")  # SUCCESS_PUSH or WIN
+
+# Check state
+print(f"Solved: {game.is_solved}")
+print(f"Pushes: {game.push_count}")</code></pre>
+        </div>
+
+        <div class="card">
+            <h2>📚 Documentation</h2>
+            <div class="links">
+                <a href="https://github.com/felipecustodio/sokoban" class="btn">
+                    <span>📁</span> View on GitHub
+                </a>
+                <a href="https://github.com/felipecustodio/sokoban/actions" class="btn btn-secondary">
+                    <span>🔧</span> CI Status
+                </a>
+            </div>
+        </div>
+
+        <footer>
+            <p>Created by Felipe Custódio • Built with Python & uv</p>
+        </footer>
+    </div>
+</body>
+</html>

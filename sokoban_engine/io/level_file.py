@@ -4,13 +4,29 @@ Supports:
 - Standard XSB format
 - RLE (run-length encoded) format
 - Alternative floor characters (-, _)
+- Alternative entity characters (B for box, & for player, X for box-on-goal)
 - Level collections (multiple levels in one file)
+- Named level selection from collections
 """
 
+import re
+from dataclasses import dataclass
 from pathlib import Path
 
 from sokoban_engine.engine.game import Game
 from sokoban_engine.io.rle import decode_rle, encode_rle, is_rle_format
+
+# Pattern matching "Level: <title>" with optional "| <solution>" suffix
+_TITLE_RE = re.compile(r"^Level:\s*(.+?)(?:\s*\|.*)?$", re.IGNORECASE)
+
+
+@dataclass(frozen=True, slots=True)
+class LevelInfo:
+    """A level loaded from a collection, with its metadata."""
+
+    title: str
+    index: int
+    game: Game
 
 
 def load_level(level_string: str) -> Game:
@@ -85,36 +101,82 @@ def load_levels_from_string(content: str) -> list[Game]:
     Returns:
         List of Game instances.
     """
-    levels: list[Game] = []
-    current_level_lines: list[str] = []
+    return [info.game for info in _parse_collection(content)]
 
-    for line in content.split("\n"):
-        stripped = line.strip()
 
-        # Check if this is a level line (contains level characters)
-        if _is_level_line(stripped):
-            current_level_lines.append(line)
-        elif current_level_lines:
-            # End of current level, try to parse it
-            level_str = "\n".join(current_level_lines)
-            try:
-                game = load_level(level_str)
-                levels.append(game)
-            except Exception:
-                # Skip invalid levels
-                pass
-            current_level_lines = []
+def load_collection_with_info(file_path: str | Path) -> list[LevelInfo]:
+    """Load a collection file, returning levels with titles and indices.
 
-    # Don't forget the last level
-    if current_level_lines:
-        level_str = "\n".join(current_level_lines)
-        try:
-            game = load_level(level_str)
-            levels.append(game)
-        except Exception:
-            pass
+    Each level is wrapped in a LevelInfo with its title (parsed from
+    "Level: <title>" lines) and 0-based index within the file. If a level
+    has no title line, a fallback is generated from the filename and the
+    level's position in the file (e.g. "Microban 3").
 
-    return levels
+    Args:
+        file_path: Path to the level collection file.
+
+    Returns:
+        List of LevelInfo objects.
+    """
+    path = Path(file_path)
+    collection_name = path.stem
+    content = path.read_text(encoding="utf-8")
+    return _parse_collection(content, collection_name)
+
+
+def load_level_by_index(file_path: str | Path, index: int) -> LevelInfo:
+    """Load a single level from a collection file by its 0-based index.
+
+    Args:
+        file_path: Path to the level collection file.
+        index: 0-based index of the level within the file.
+
+    Returns:
+        LevelInfo for the requested level.
+
+    Raises:
+        IndexError: If index is out of range.
+    """
+    path = Path(file_path)
+    collection_name = path.stem
+    content = path.read_text(encoding="utf-8")
+    levels = _parse_collection(content, collection_name)
+    if index < 0 or index >= len(levels):
+        raise IndexError(
+            f"Level index {index} out of range "
+            f"(collection has {len(levels)} levels)"
+        )
+    return levels[index]
+
+
+def load_level_by_title(file_path: str | Path, title: str) -> LevelInfo:
+    """Load a single level from a collection file by its title.
+
+    Title matching is case-insensitive.
+
+    Args:
+        file_path: Path to the level collection file.
+        title: Title to search for (case-insensitive).
+
+    Returns:
+        LevelInfo for the first level matching the title.
+
+    Raises:
+        KeyError: If no level with the given title is found.
+    """
+    path = Path(file_path)
+    collection_name = path.stem
+    content = path.read_text(encoding="utf-8")
+    levels = _parse_collection(content, collection_name)
+    title_lower = title.lower()
+    for info in levels:
+        if info.title.lower() == title_lower:
+            return info
+    available = [info.title for info in levels]
+    raise KeyError(
+        f"No level titled {title!r} in collection. "
+        f"Available: {available}"
+    )
 
 
 def save_level(game: Game, use_rle: bool = False) -> str:
@@ -152,11 +214,92 @@ def save_level_file(
     path.write_text(content, encoding="utf-8")
 
 
+# ---------------------------------------------------------------------------
+# Internal helpers
+# ---------------------------------------------------------------------------
+
+
+def _parse_collection(
+    content: str,
+    collection_name: str = "",
+) -> list[LevelInfo]:
+    """Parse a collection string into LevelInfo objects.
+
+    Splits on non-level lines (titles, blank lines, comments), extracts
+    "Level: <title>" headers, and parses each level block.
+    """
+    results: list[LevelInfo] = []
+    current_level_lines: list[str] = []
+    current_title: str | None = None
+    level_index = 0
+
+    for line in content.split("\n"):
+        stripped = line.strip()
+
+        if _is_level_line(stripped):
+            current_level_lines.append(line)
+        else:
+            # Non-level line — flush any accumulated level
+            if current_level_lines:
+                _try_parse_level(
+                    current_level_lines,
+                    current_title,
+                    level_index,
+                    collection_name,
+                    results,
+                )
+                level_index = len(results)
+                current_level_lines = []
+                current_title = None
+
+            # Check if this line is a title
+            title_match = _TITLE_RE.match(stripped)
+            if title_match:
+                current_title = title_match.group(1).strip()
+
+    # Flush last level
+    if current_level_lines:
+        _try_parse_level(
+            current_level_lines,
+            current_title,
+            level_index,
+            collection_name,
+            results,
+        )
+
+    return results
+
+
+def _try_parse_level(
+    lines: list[str],
+    title: str | None,
+    index: int,
+    collection_name: str,
+    results: list[LevelInfo],
+) -> None:
+    """Try to parse a level block and append to results."""
+    level_str = "\n".join(lines)
+    try:
+        game = load_level(level_str)
+    except Exception:
+        return
+
+    if title:
+        resolved_title = title
+    elif collection_name:
+        resolved_title = f"{collection_name} {index + 1}"
+    else:
+        resolved_title = f"Level {index + 1}"
+
+    game.title = resolved_title
+    results.append(LevelInfo(title=resolved_title, index=index, game=game))
+
+
 def _normalize_level_string(level_string: str) -> str:
     """Normalize a level string for parsing."""
     # Remove carriage returns
     normalized = level_string.replace("\r\n", "\n").replace("\r", "\n")
-    return normalized.strip()
+    return normalized.strip("\n\r")
 
 
 def _convert_floor_characters(level_string: str) -> str:
@@ -172,8 +315,8 @@ def _is_level_line(line: str) -> bool:
     if not line:
         return False
 
-    # Level lines contain level characters
-    level_chars = set("#@+$*. -_|")
+    # Level lines contain level characters (including alternatives B, &, X)
+    level_chars = set("#@+$*. -_|B&X")
 
     # Must contain at least one wall character to be a level line
     if "#" not in line and "|" not in line:

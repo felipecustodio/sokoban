@@ -37,7 +37,11 @@ from sokoban_engine.core.types import (
 from sokoban_engine.engine.game import Game
 from sokoban_engine.history.move_record import MoveRecord
 from sokoban_engine.io.level_file import (
+    LevelInfo,
+    load_collection_with_info,
     load_level,
+    load_level_by_index,
+    load_level_by_title,
     load_level_collection,
     load_level_file,
     load_levels_from_string,
@@ -50,6 +54,8 @@ from sokoban_engine.io.solution import (
     solution_to_directions,
     solution_to_string,
 )
+from sokoban_engine.state.transposition import TranspositionTable
+from sokoban_engine.state.zobrist import ZobristHasher
 
 __version__ = "0.1.0"
 
@@ -63,10 +69,16 @@ __all__ = [
     "ParseError",
     "Position",
     "TileIndex",
+    "TranspositionTable",
+    "ZobristHasher",
+    "LevelInfo",
     # I/O functions
     "decode_rle",
     "encode_rle",
+    "load_collection_with_info",
     "load_level",
+    "load_level_by_index",
+    "load_level_by_title",
     "load_level_collection",
     "load_level_file",
     "load_levels_from_string",

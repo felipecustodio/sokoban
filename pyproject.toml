@@ -34,6 +34,11 @@ dev = [
     "ruff>=0.8.0",
 ]
 
+game = [
+    "fastapi>=0.115.0",
+    "uvicorn[standard]>=0.32.0",
+]
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 python_files = ["test_*.py"]

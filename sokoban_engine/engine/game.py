@@ -15,6 +15,7 @@ from sokoban_engine.history.undo_stack import UndoStack, invert_move, replay_mov
 from sokoban_engine.logic.move import apply_move, can_move, get_legal_move_directions
 from sokoban_engine.logic.reachability import get_legal_pushes
 from sokoban_engine.state.game_state import GameState
+from sokoban_engine.state.zobrist import ZobristHasher
 
 
 class Game:
@@ -52,6 +53,20 @@ class Game:
         )
         self._state: GameState = self._initial_state.copy()
         self._history: UndoStack = UndoStack()
+        self._title: str = ""
+        self._zobrist: ZobristHasher = ZobristHasher(self._static_map.num_floor_tiles)
+        self._state_hash: int = self._zobrist.hash_state(
+            self._initial_state.player_index, self._initial_state.box_indices
+        )
+
+    @property
+    def title(self) -> str:
+        """Level title, if set."""
+        return self._title
+
+    @title.setter
+    def title(self, value: str) -> None:
+        self._title = value
 
     # === State Queries ===
 
@@ -142,12 +157,22 @@ class Game:
         Returns:
             MoveResult indicating success/failure and type.
         """
+        old_player = self._state.player_index
         new_state, result = apply_move(self._static_map, self._state, direction)
 
         if new_state is not None:
-            # Move succeeded - update state and record history
             was_push = result in (MoveResult.SUCCESS_PUSH, MoveResult.WIN)
             self._history.push(MoveRecord(direction, was_push))
+            if was_push:
+                box_to = self._static_map.get_neighbor(new_state.player_index, direction)
+                self._state_hash = self._zobrist.update_push(
+                    self._state_hash, old_player, new_state.player_index,
+                    new_state.player_index, box_to,
+                )
+            else:
+                self._state_hash = self._zobrist.update_walk(
+                    self._state_hash, old_player, new_state.player_index,
+                )
             self._state = new_state
 
         return result
@@ -185,7 +210,23 @@ class Game:
         if record is None:
             return False
 
+        old_state = self._state
         self._state = invert_move(self._static_map, self._state, record)
+        if record.was_push:
+            box_current = self._static_map.get_neighbor(
+                old_state.player_index, record.direction
+            )
+            self._state_hash = self._zobrist.update_push(
+                self._state_hash,
+                old_state.player_index,
+                self._state.player_index,
+                box_current,
+                old_state.player_index,
+            )
+        else:
+            self._state_hash = self._zobrist.update_walk(
+                self._state_hash, old_state.player_index, self._state.player_index
+            )
         return True
 
     def redo(self) -> bool:
@@ -194,7 +235,23 @@ class Game:
         if record is None:
             return False
 
+        old_player = self._state.player_index
         self._state = replay_move(self._static_map, self._state, record)
+        if record.was_push:
+            box_to = self._static_map.get_neighbor(
+                self._state.player_index, record.direction
+            )
+            self._state_hash = self._zobrist.update_push(
+                self._state_hash,
+                old_player,
+                self._state.player_index,
+                self._state.player_index,
+                box_to,
+            )
+        else:
+            self._state_hash = self._zobrist.update_walk(
+                self._state_hash, old_player, self._state.player_index
+            )
         return True
 
     @property
@@ -211,6 +268,9 @@ class Game:
         """Reset to initial state, clearing history."""
         self._state = self._initial_state.copy()
         self._history.clear()
+        self._state_hash = self._zobrist.hash_state(
+            self._initial_state.player_index, self._initial_state.box_indices
+        )
 
     def get_move_history(self) -> list[MoveRecord]:
         """Get list of all moves made."""
@@ -219,8 +279,8 @@ class Game:
     # === State Export (for solvers/serialization) ===
 
     def get_state_hash(self) -> int:
-        """Get hash of current state for memoization."""
-        return hash(self._state)
+        """Get Zobrist hash of current state for memoization."""
+        return self._state_hash
 
     def get_canonical_state(self) -> tuple[TileIndex, tuple[TileIndex, ...]]:
         """Get canonical (player_index, sorted_box_indices) representation."""
@@ -237,6 +297,9 @@ class Game:
         cloned._initial_state = self._initial_state
         cloned._state = self._state.copy()
         cloned._history = UndoStack()  # Fresh history for clone
+        cloned._title = self._title
+        cloned._zobrist = self._zobrist  # Shared (immutable, same level)
+        cloned._state_hash = self._state_hash
         return cloned
 
     # === Internal Access (for advanced use) ===

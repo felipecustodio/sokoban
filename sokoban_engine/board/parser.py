@@ -10,8 +10,14 @@ Standard Sokoban level format (XSB):
     (space) = floor
     - = floor (alternative)
     _ = floor (alternative)
+
+Alternative characters (used by some level collections):
+    B = box (alternative for $)
+    & = player (alternative for @)
+    X = box on goal (alternative for *)
 """
 
+from collections import deque
 from dataclasses import dataclass
 
 from sokoban_engine.core.types import CellType, Position
@@ -45,7 +51,7 @@ def parse_level(level_string: str) -> ParsedLevel:
     Raises:
         ParseError: If level is invalid.
     """
-    lines = level_string.strip().split("\n")
+    lines = level_string.strip("\n\r").split("\n")
 
     if not lines:
         raise ParseError("Empty level")
@@ -92,6 +98,8 @@ def parse_level(level_string: str) -> ParsedLevel:
     if len(boxes) == 0:
         raise ParseError("No boxes found in level")
 
+    _mark_exterior_as_wall(grid, player_pos, width, height)
+
     # Convert to immutable tuples
     immutable_grid = tuple(tuple(row) for row in grid)
 
@@ -103,6 +111,59 @@ def parse_level(level_string: str) -> ParsedLevel:
         box_positions=tuple(boxes),
         goal_positions=tuple(goals),
     )
+
+
+def _flood_fill_exterior(
+    grid: list[list[CellType]],
+    width: int,
+    height: int,
+) -> set[tuple[int, int]]:
+    """BFS from grid boundary to find exterior floor cells.
+
+    Only seeds from FLOOR cells on the boundary and only expands
+    through FLOOR cells. GOAL cells on the boundary are treated as
+    intentional level content and act as barriers, preserving levels
+    that use the grid edge as an implicit wall.
+    """
+    exterior: set[tuple[int, int]] = set()
+    queue: deque[tuple[int, int]] = deque()
+
+    # Seed with FLOOR cells on the grid boundary
+    for row in range(height):
+        for col in range(width):
+            if row == 0 or row == height - 1 or col == 0 or col == width - 1:
+                if grid[row][col] == CellType.FLOOR:
+                    exterior.add((row, col))
+                    queue.append((row, col))
+
+    while queue:
+        row, col = queue.popleft()
+        for dr, dc in ((-1, 0), (1, 0), (0, -1), (0, 1)):
+            nr, nc = row + dr, col + dc
+            if 0 <= nr < height and 0 <= nc < width and (nr, nc) not in exterior:
+                if grid[nr][nc] == CellType.FLOOR:
+                    exterior.add((nr, nc))
+                    queue.append((nr, nc))
+
+    return exterior
+
+
+def _mark_exterior_as_wall(
+    grid: list[list[CellType]],
+    player_pos: Position,
+    width: int,
+    height: int,
+) -> None:
+    """Convert exterior floor cells to walls.
+
+    Flood-fills from FLOOR cells on the grid boundary inward. Any
+    FLOOR cell reachable from an edge without crossing a wall or goal
+    is exterior padding and gets converted to WALL. Interior enclosed
+    regions and boundary goals are untouched.
+    """
+    exterior = _flood_fill_exterior(grid, width, height)
+    for row, col in exterior:
+        grid[row][col] = CellType.WALL
 
 
 def _parse_char(char: str) -> tuple[CellType, bool, bool, bool]:
@@ -118,13 +179,13 @@ def _parse_char(char: str) -> tuple[CellType, bool, bool, bool]:
             return CellType.FLOOR, False, False, False
         case ".":
             return CellType.GOAL, False, False, True
-        case "@":
+        case "@" | "&":
             return CellType.FLOOR, True, False, False
         case "+":
             return CellType.GOAL, True, False, True
-        case "$":
+        case "$" | "B":
             return CellType.FLOOR, False, True, False
-        case "*":
+        case "*" | "X":
             return CellType.GOAL, False, True, True
         case _:
             # Treat unknown as floor (for robustness)

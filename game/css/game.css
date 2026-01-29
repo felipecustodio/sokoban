@@ -1,0 +1,202 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  background: #0d0d14;
+  color: #e0e0e0;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  overflow: hidden;
+  width: 100vw;
+  height: 100vh;
+}
+
+#game-canvas {
+  display: block;
+  width: 100vw;
+  height: 100vh;
+}
+
+/* Glass panel base */
+.glass-panel {
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+}
+
+/* Top bar */
+#top-bar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 18px;
+  margin: 12px;
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  z-index: 10;
+  font-size: 14px;
+}
+
+#level-title {
+  font-weight: 600;
+  font-size: 16px;
+  margin-right: 8px;
+  white-space: nowrap;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+#top-bar select {
+  background: rgba(255, 255, 255, 0.06);
+  color: #e0e0e0;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-size: 13px;
+  font-family: inherit;
+  max-width: 200px;
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s;
+}
+
+#top-bar select:hover {
+  border-color: rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.1);
+}
+
+#top-bar select:focus {
+  outline: none;
+  border-color: #4da6ff;
+  box-shadow: 0 0 0 2px rgba(77, 166, 255, 0.2);
+}
+
+#top-bar button {
+  background: rgba(255, 255, 255, 0.06);
+  color: #e0e0e0;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 6px 16px;
+  font-size: 13px;
+  font-family: inherit;
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s, box-shadow 0.2s;
+}
+
+#top-bar button:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.2);
+  box-shadow: 0 0 12px rgba(77, 166, 255, 0.15);
+}
+
+/* Bottom stats bar */
+#bottom-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: center;
+  gap: 32px;
+  padding: 10px 18px;
+  margin: 12px;
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  z-index: 10;
+  font-size: 14px;
+}
+
+.stat {
+  display: flex;
+  gap: 6px;
+}
+
+.stat-label {
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.stat-value {
+  font-weight: 600;
+  color: #4da6ff;
+}
+
+/* Win overlay */
+#win-overlay {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.6);
+  z-index: 20;
+}
+
+#win-overlay.hidden {
+  display: none;
+}
+
+#win-overlay h2,
+#win-overlay button {
+  position: relative;
+}
+
+#win-overlay h2 {
+  font-size: 32px;
+  color: #4ecdc4;
+  margin-bottom: 20px;
+  text-shadow: 0 0 20px rgba(78, 205, 196, 0.3);
+}
+
+#win-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 40px 56px;
+  background: rgba(255, 255, 255, 0.07);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 18px;
+}
+
+#win-overlay button {
+  background: rgba(77, 166, 255, 0.2);
+  color: #4da6ff;
+  border: 1px solid rgba(77, 166, 255, 0.3);
+  border-radius: 10px;
+  padding: 10px 28px;
+  font-size: 15px;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.2s, box-shadow 0.2s;
+}
+
+#win-overlay button:hover {
+  background: rgba(77, 166, 255, 0.3);
+  box-shadow: 0 0 16px rgba(77, 166, 255, 0.25);
+}
+
+/* Controls help */
+#controls-help {
+  position: fixed;
+  bottom: 60px;
+  right: 24px;
+  color: rgba(255, 255, 255, 0.25);
+  font-size: 12px;
+  z-index: 10;
+  text-align: right;
+  line-height: 1.6;
+}

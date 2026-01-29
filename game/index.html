@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sokoban</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/game/css/game.css">
+</head>
+<body>
+  <div id="top-bar">
+    <span id="level-title">Sokoban</span>
+    <select id="collection-select" title="Collection"></select>
+    <select id="level-select" title="Level"></select>
+    <button id="reset-btn">Reset</button>
+  </div>
+
+  <canvas id="game-canvas"></canvas>
+
+  <div id="bottom-bar">
+    <div class="stat">
+      <span class="stat-label">Moves</span>
+      <span class="stat-value" id="moves">0</span>
+    </div>
+    <div class="stat">
+      <span class="stat-label">Pushes</span>
+      <span class="stat-value" id="pushes">0</span>
+    </div>
+    <div class="stat">
+      <span class="stat-label">Boxes</span>
+      <span class="stat-value" id="boxes-on-goals">0/0</span>
+    </div>
+  </div>
+
+  <div id="win-overlay" class="hidden">
+    <div id="win-card">
+      <h2>Level Complete!</h2>
+      <button id="next-level-btn">Next Level</button>
+    </div>
+  </div>
+
+  <div id="controls-help">
+    Arrows / WASD: Move &middot; Click+Drag: Walk path<br>
+    Tab: Cycle paths &middot; Esc: Cancel<br>
+    Z: Undo &middot; Y: Redo &middot; R: Reset
+  </div>
+
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js"
+    }
+  }
+  </script>
+  <script type="module" src="/game/js/main.js"></script>
+</body>
+</html>

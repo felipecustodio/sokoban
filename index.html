@@ -7,15 +7,22 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tufte-css/1.8.0/tufte.min.css" integrity="sha512-F5lKjC1GKbwLFXdThwMWx8yF8TX/WVrdhWYN9PWb6eb5hIRLmO463nrpqLnEUHxy2EHIzfC4dq/mncHD6ndR+g==" crossorigin="anonymous" referrerpolicy="no-referrer" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/iconoir-icons/iconoir@main/css/iconoir.css" />
     <style>
+        /* Force light theme regardless of OS dark mode preference */
+        :root {
+            color-scheme: light only;
+        }
+
         pre, pre code {
             font-family: Consolas, 'Liberation Mono', Menlo, Courier, monospace;
             font-size: 1.2rem;
-            line-height: 1.5;
+            line-height: 1.6;
+            color: #1a1a1a;
         }
         pre {
-            background: #fffff8;
-            border: 1px solid #ddd;
-            padding: 1.2rem 1.4rem;
+            background: #f5f5f0;
+            border: 1px solid #d0d0c8;
+            border-left: 3px solid #999;
+            padding: 1.4rem 1.6rem;
             overflow-x: auto;
             margin: 1.4rem 0;
         }
@@ -24,9 +31,20 @@
             font-size: 1.1rem;
         }
         p > code, li > code, td > code {
-            background: #f0f0e8;
-            padding: 0.1rem 0.35rem;
+            background: #edede5;
+            padding: 0.15rem 0.4rem;
             border-radius: 2px;
+            color: #1a1a1a;
+        }
+
+        /* Banner */
+        .banner {
+            text-align: center;
+            margin: 1rem 0 0.5rem 0;
+        }
+        .banner img {
+            max-width: 300px;
+            height: auto;
         }
         .mermaid {
             margin: 1.4rem 0;
@@ -73,6 +91,11 @@
 <body>
     <article>
         <h1>Sokoban Engine</h1>
+
+        <div class="banner">
+            <img src="assets/banner_art_transparent.png" alt="Sokoban — a figure pushing a box">
+        </div>
+
         <p class="subtitle">A zero-dependency Python engine for Sokoban state representation, move generation, and reachability analysis</p>
 
         <div class="badge-row">
@@ -117,9 +140,11 @@
             the tuple provides equality and hashing for transposition tables; the bitboard provides
             O(1) membership testing for collision detection.</p>
 
-            <p>Hashing is implemented via <code>hash((self.player_index, self.box_indices))</code>,
-            which is O(<em>b</em>) where <em>b</em> is the number of boxes, since Python must hash
-            each element in the inner tuple.
+            <p>The <code>GameState</code> dataclass provides structural equality via
+            <code>hash((self.player_index, self.box_indices))</code>, which is O(<em>b</em>).
+            For solver-grade performance, the <code>Game</code> facade maintains a
+            <code>ZobristHasher</code> that provides O(1) incremental hash updates on every
+            move, undo, and redo (see <a href="#zobrist">Zobrist Hashing</a> below).
             <label for="sn-tile-idx" class="margin-toggle sidenote-number"></label>
             <input type="checkbox" id="sn-tile-idx" class="margin-toggle"/>
             <span class="sidenote">Wall cells receive the sentinel index <code>-1</code> and are excluded from the index space entirely. The bitboard width equals only the number of passable tiles, not the total grid area.</span>
@@ -431,6 +456,80 @@ class MoveRecord:
             <span class="sidenote">The <code>_update_box_indices</code> helper: <code>new_list = [idx for idx in box_indices if idx != from_idx]</code>, <code>new_list.append(to_idx)</code>, <code>return tuple(sorted(new_list))</code>. The sort maintains the canonical ordering needed for consistent hashing.</span></p>
         </section>
 
+        <!-- ==================== ZOBRIST HASHING ==================== -->
+        <section id="zobrist">
+            <h2><i class="iconoir-hashtag section-icon"></i>Zobrist Hashing</h2>
+
+            <p><span class="newthought">Zobrist hashing</span> provides O(1) incremental state
+            hashing for solver transposition tables. The <code>ZobristHasher</code> is initialised
+            per-level with two tables of 64-bit random integers&mdash;one for player positions, one
+            for box presence&mdash;seeded deterministically via <code>random.Random(seed)</code>.
+            <label for="sn-zobrist-collision" class="margin-toggle sidenote-number"></label>
+            <input type="checkbox" id="sn-zobrist-collision" class="margin-toggle"/>
+            <span class="sidenote">With 64-bit keys, the birthday-bound collision probability stays below 10<sup>&minus;9</sup> for up to ~6 billion distinct states. For typical Sokoban levels with thousands to millions of reachable states, collisions are negligible.</span>
+            The hash for any state is the XOR of the player&rsquo;s key with the keys of all occupied box tiles:</p>
+
+            <pre><code>hash = player_keys[player_index]
+       XOR box_keys[b1] XOR box_keys[b2] XOR ...</code></pre>
+
+            <p>Since XOR is its own inverse, incremental updates after a move require only two or
+            four XOR operations&mdash;no recomputation over all boxes:</p>
+
+            <pre><code>def update_walk(self, current_hash, old_player, new_player):
+    return current_hash ^ self._player_keys[old_player]
+                        ^ self._player_keys[new_player]
+
+def update_push(self, current_hash, old_player, new_player,
+                box_from, box_to):
+    return (current_hash ^ self._player_keys[old_player]
+                         ^ self._player_keys[new_player]
+                         ^ self._box_keys[box_from]
+                         ^ self._box_keys[box_to])</code></pre>
+
+            <p>The <code>Game</code> facade maintains a <code>_state_hash</code> field that is
+            updated incrementally in <code>move()</code>, <code>undo()</code>, <code>redo()</code>,
+            and recomputed from scratch in <code>reset()</code>. The <code>ZobristHasher</code>
+            instance is immutable and shared across <code>clone()</code> calls, since it depends
+            only on the level geometry.
+            <label for="sn-zobrist-game" class="margin-toggle sidenote-number"></label>
+            <input type="checkbox" id="sn-zobrist-game" class="margin-toggle"/>
+            <span class="sidenote"><code>get_state_hash()</code> now returns the precomputed Zobrist hash rather than calling Python&rsquo;s <code>hash()</code> on the state tuple. This makes repeated hash lookups in solver inner loops effectively free.</span></p>
+
+            <p>A companion <code>TranspositionTable[T]</code> class provides a generic
+            <code>dict</code>-backed hash map for solvers to store arbitrary data (depth, bound,
+            move sequences) keyed by Zobrist hash. It exposes <code>store()</code>,
+            <code>lookup()</code>, <code>__contains__</code>, and <code>clear()</code>.</p>
+
+            <figure class="fullwidth">
+                <div class="mermaid">
+                flowchart LR
+                    subgraph "ZobristHasher (per-level, immutable)"
+                        PK["player_keys[tile] → 64-bit int"]
+                        BK["box_keys[tile] → 64-bit int"]
+                    end
+                    subgraph "Game._state_hash"
+                        H["current hash (int)"]
+                    end
+                    subgraph "Incremental Update"
+                        W["Walk: XOR old_player, new_player"]
+                        P["Push: XOR old_player, new_player,<br>box_from, box_to"]
+                    end
+                    PK --> W
+                    PK --> P
+                    BK --> P
+                    W --> H
+                    P --> H
+                    H -->|"get_state_hash()"| TT["TranspositionTable"]
+
+                    style H fill:#e8d44d,stroke:#333,color:#333
+                    style TT fill:#c6f6d5,stroke:#333,color:#333
+                </div>
+                <p>Zobrist hashing data flow. The hasher holds precomputed random keys per tile.
+                Each move incrementally XORs in the changed positions, keeping the running hash in sync.
+                Solvers use the hash as a key into a transposition table.</p>
+            </figure>
+        </section>
+
         <!-- ==================== PARSER ARCHITECTURE ==================== -->
         <section>
             <h2><i class="iconoir-page section-icon"></i>Parser Architecture</h2>
@@ -508,10 +607,16 @@ class MoveRecord:
                             <td><code>(boxes &amp; goals) == boxes</code></td>
                         </tr>
                         <tr>
-                            <td>State hashing</td>
-                            <td>O(<em>b</em>) tuple hash</td>
+                            <td>State hashing (full)</td>
+                            <td>O(<em>b</em>) Zobrist XOR</td>
                             <td>O(<em>b</em>) set hash</td>
-                            <td>Canonical sorted tuple enables consistent hashing</td>
+                            <td>Full recomputation from scratch</td>
+                        </tr>
+                        <tr>
+                            <td>State hashing (incremental)</td>
+                            <td>O(1) Zobrist update</td>
+                            <td>O(<em>b</em>) rehash</td>
+                            <td>2 XORs for walk, 4 for push</td>
                         </tr>
                         <tr>
                             <td>State equality</td>
@@ -550,18 +655,72 @@ class MoveRecord:
             </figure>
         </section>
 
+        <!-- ==================== INTERACTIVE PLAYER ==================== -->
+        <section>
+            <h2><i class="iconoir-cursor-pointer section-icon"></i>Interactive Player</h2>
+
+            <p><span class="newthought">A browser-based player</span> in <code>game/</code> wraps the
+            engine behind a FastAPI server, rendering levels with Three.js and providing a
+            click-and-drag pathfinding interface.
+            <label for="sn-game-deps" class="margin-toggle sidenote-number"></label>
+            <input type="checkbox" id="sn-game-deps" class="margin-toggle"/>
+            <span class="sidenote">The interactive player is a separate application that depends on the engine&mdash;it is not part of <code>sokoban_engine</code> itself. The server uses FastAPI and uvicorn; the client uses Three.js for WebGL rendering. The engine remains zero-dependency.</span>
+            The user clicks a tile, drags to a destination, and the client computes up to three
+            alternative paths in real time, rendering them as coloured overlays on the board.</p>
+
+            <p>Pathfinding runs entirely client-side in <code>pathPlanner.js</code>. The primary
+            algorithm is BFS on the walkability grid (floor tiles not occupied by boxes). When no
+            walk-only route exists, the planner falls back to a <em>push-aware BFS</em> that searches
+            over (player position, box positions) state pairs&mdash;capped at 50,000 expanded states
+            to prevent combinatorial explosion.
+            <label for="sn-yen" class="margin-toggle sidenote-number"></label>
+            <input type="checkbox" id="sn-yen" class="margin-toggle"/>
+            <span class="sidenote">Alternative paths are generated using a variant of Yen&rsquo;s algorithm: the primary path is found by BFS, then intermediate tiles are blocked one at a time to force detours. For push-aware paths, virtual walls serve the same role. Up to 3 alternatives are generated.</span></p>
+
+            <p>A <code>dragController.js</code> state machine manages the interaction lifecycle:</p>
+            <ul>
+                <li><strong>idle</strong> &rarr; mouse down on a tile: compute paths, enter <strong>dragging</strong></li>
+                <li><strong>dragging</strong> &rarr; mouse move: debounced (50ms) path recomputation to current tile</li>
+                <li><strong>dragging</strong> &rarr; mouse up: execute selected path, enter <strong>executing</strong></li>
+                <li><strong>dragging</strong> &rarr; Escape or arrow key: cancel and return to <strong>idle</strong></li>
+                <li><strong>dragging</strong> &rarr; Tab: cycle between alternative paths</li>
+                <li><strong>executing</strong> &rarr; server response: update view, return to <strong>idle</strong></li>
+            </ul>
+
+            <p>Path execution is atomic: the server&rsquo;s <code>/api/move-path</code> endpoint
+            accepts a direction sequence and applies each move in order, rolling back the entire
+            sequence if any step fails. The renderer shows ghost boxes at push destinations during
+            the drag preview, collapsing multi-push chains to show final positions only.</p>
+
+            <figure class="fullwidth">
+                <div class="mermaid">
+                stateDiagram-v2
+                    [*] --> idle
+                    idle --> dragging : mousedown on tile
+                    dragging --> dragging : mousemove (replan)
+                    dragging --> dragging : Tab (cycle path)
+                    dragging --> idle : Escape / arrow key
+                    dragging --> executing : mouseup
+                    executing --> idle : server response
+                </div>
+                <p>Drag controller state machine. The idle&ndash;dragging&ndash;executing cycle
+                governs the click-and-drag pathfinding interaction. Path computation and rendering
+                happen entirely during the dragging state; execution is a single atomic server request.</p>
+            </figure>
+        </section>
+
         <!-- ==================== ENGINE ARCHITECTURE ==================== -->
         <section>
             <h2><i class="iconoir-box-3d-center section-icon"></i>Engine Architecture</h2>
 
-            <p><span class="newthought">The codebase</span> consists of 15 source files across 7
-            sub-packages, totalling ~1,980 lines of Python.
+            <p><span class="newthought">The codebase</span> consists of 25 source files across 7
+            sub-packages, totalling ~2,590 lines of Python.
             <label for="sn-modules" class="margin-toggle sidenote-number"></label>
             <input type="checkbox" id="sn-modules" class="margin-toggle"/>
-            <span class="sidenote">The <code>Game</code> class in <code>engine/game.py</code> (252 lines) is the public facade; all other modules are internal. The <code>types</code> and <code>direction</code> modules from <code>core</code> are imported by nearly every other module and are omitted from the diagram arrows for clarity.</span>
+            <span class="sidenote">The <code>Game</code> class in <code>engine/game.py</code> (315 lines) is the public facade; all other modules are internal. The <code>types</code> and <code>direction</code> modules from <code>core</code> are imported by nearly every other module and are omitted from the diagram arrows for clarity.</span>
             The <code>core</code> layer defines types and direction utilities.
             The <code>board</code> layer handles parsing and static map construction.
-            The <code>state</code> layer manages bitboards and game state.
+            The <code>state</code> layer manages bitboards, game state, Zobrist hashing, and the transposition table.
             The <code>logic</code> layer implements move application and reachability.
             The <code>history</code> layer provides undo/redo.
             The <code>io</code> layer handles file I/O, RLE encoding, and solution string parsing.
@@ -590,6 +749,8 @@ class MoveRecord:
                     subgraph "state"
                         bitboard["bitboard.py<br><em>BitboardOps: set, clear,<br>has_box, move_box</em>"]
                         game_state["game_state.py<br><em>GameState: player_index,<br>box_indices, box_bitboard</em>"]
+                        zobrist["zobrist.py<br><em>ZobristHasher:<br>O(1) incremental hash</em>"]
+                        transposition["transposition.py<br><em>TranspositionTable&lt;T&gt;</em>"]
                     end
 
                     subgraph "logic"
@@ -629,6 +790,7 @@ class MoveRecord:
                     move --> game
                     reachability --> game
                     game_state --> game
+                    zobrist --> game
 
                     style game fill:#e8d44d,stroke:#333,color:#333
                     style types fill:#e2e8f0,stroke:#333,color:#333
